@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficosa Flow</title>
+<style>
+body{font-family:Arial;background:#eef2f5;padding:15px}
+.card{background:white;border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+input,select,button{padding:10px;border-radius:10px;border:1px solid #ccc;margin:4px}
+button{background:#0b57d0;color:white;border:none}
+.row{display:flex;justify-content:space-between;align-items:center;margin:8px 0}
+.small{font-size:12px;color:#666}
+</style>
+</head>
+<body>
+<div class='card'>
+<h2>Ficosa Flow</h2>
+<div>Línea:
+<select id='line'><option>SE270</option><option>SE380</option><option>SE38X</option></select></div>
+<div>Objetivo <input id='goal' type='number' value='300'></div>
+<div>Fabricadas <input id='done' type='number' value='217'></div>
+<button onclick='update()'>Actualizar</button>
+<h3 id='pending'></h3>
+</div>
+
+<div class='card'>
+<h3>Material</h3>
+<div id='refs'></div>
+</div>
+
+<script>
+const refs=[
+{name:"Motor Reg Luna IZQ",code:"21992792",box:90,stock:0},
+{name:"Motor Reg Luna DER",code:"21982721S",box:90,stock:0},
+{name:"Carcasa IZQ",code:"SP0006692",box:24,stock:0},
+{name:"Carcasa DER",code:"SP0006693",box:24,stock:0},
+{name:"Placa Portaluz",code:"212834388",box:108,stock:0}
+];
+function render(){
+ let h="";
+ refs.forEach((r,i)=>{
+ h+=`<div class='row'><div><b>${r.name}</b><div class='small'>${r.code} · ${r.box} uds/caja</div><div>${r.stock} uds en línea</div></div>
+ <div><button onclick='refs[${i}].stock+=refs[${i}].box;save()'>+1 caja</button>
+ <button onclick='refs[${i}].stock=Math.max(0,refs[${i}].stock-refs[${i}].box);save()'>-1 caja</button></div></div>`;
+ });
+ document.getElementById('refs').innerHTML=h;
+ update();
+}
+function update(){
+ let p=(+goal.value)-(+done.value);
+ pending.innerText='Pendientes: '+p+' piezas';
+ localStorage.setItem('goal',goal.value);
+ localStorage.setItem('done',done.value);
+}
+function save(){localStorage.setItem('refs',JSON.stringify(refs));render();}
+if(localStorage.getItem('refs')){
+ let saved=JSON.parse(localStorage.getItem('refs'));
+ saved.forEach((s,i)=>refs[i].stock=s.stock);
+}
+goal.value=localStorage.getItem('goal')||300;
+done.value=localStorage.getItem('done')||217;
+render();
+</script>
+</body></html>
