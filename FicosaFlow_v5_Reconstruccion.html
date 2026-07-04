@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ficosa Flow v5</title>
+<style>
+body{font-family:Arial;background:#f4f4f4;padding:20px}
+.card{background:white;border-radius:15px;padding:20px;max-width:900px;margin:auto}
+select,button,input{padding:8px;margin:5px}
+.linea{border:1px solid #ddd;border-radius:10px;padding:10px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>🚚 Ficosa Flow v5 📦</h1>
+
+<h3>🏭 Líneas activas del turno</h3>
+<select id="linea">
+<option>SE380 AUTO</option>
+<option>SE380 MANUAL</option>
+<option>IVECO 5/6</option>
+<option>STO CHASIS T-ROC1</option>
+<option>SUBCJTO NISSAN PZ1D</option>
+<option>SE270</option>
+</select>
+
+<div class="linea">
+<h3>📦 Cajas introducidas: <span id="cajas">0</span></h3>
+<button onclick="sumar()">➕ Añadir caja</button>
+<button onclick="restar()">➖ Quitar caja</button>
+
+<h3>🎯 Objetivo</h3>
+<input id="objetivo" type="number" value="0">
+
+<h3>✅ Fabricadas</h3>
+<input id="fabricadas" type="number" value="0">
+
+<h3>⏳ Pendientes: <span id="pendientes">0</span></h3>
+<button onclick="calcular()">Actualizar</button>
+</div>
+
+<button onclick="cerrarTurno()">🔄 Cerrar turno</button>
+
+<h3>📋 Historial</h3>
+<ul id="historial"></ul>
+
+<script>
+let cajas=0;
+function sumar(){cajas++;document.getElementById('cajas').innerText=cajas;}
+function restar(){if(cajas>0)cajas--;document.getElementById('cajas').innerText=cajas;}
+function calcular(){
+let o=Number(document.getElementById('objetivo').value);
+let f=Number(document.getElementById('fabricadas').value);
+document.getElementById('pendientes').innerText=o-f;
+}
+function cerrarTurno(){
+const linea=document.getElementById('linea').value;
+const li=document.createElement('li');
+li.innerText=new Date().toLocaleString()+" - "+linea+" - 📦 "+cajas+" cajas";
+document.getElementById('historial').appendChild(li);
+localStorage.setItem('historial',document.getElementById('historial').innerHTML);
+cajas=0;document.getElementById('cajas').innerText=0;
+}
+window.onload=function(){
+document.getElementById('historial').innerHTML=localStorage.getItem('historial')||"";
+}
+</script>
+</div>
+</body>
+</html>
