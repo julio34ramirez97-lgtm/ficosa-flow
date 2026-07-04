@@ -28,11 +28,6 @@ button{background:#0b57d0;color:white;border:none}
 <div class='badge' id='boxCounter'></div>
 </div>
 <div class='card'>
-<button onclick='finishTrip()'>Viaje completado</button>
-<button onclick='resetShift()'>Reiniciar turno</button>
-<button onclick='exportSummary()'>Resumen del turno</button>
-</div>
-<div class='card'>
 <h3>Material</h3>
 <div id='refs'></div>
 </div>
@@ -66,22 +61,5 @@ function update(store=true){let c=current(); c.goal=+goal.value;c.done=+done.val
 function save(){localStorage.setItem('ficosaflow',JSON.stringify(data));render();}
 function changeLine(){render();}
 render();
-
-function resetShift(){
- if(confirm('¿Reiniciar el turno actual de esta línea?')){
-   let c=current();
-   c.done=0;
-   c.refs.forEach(r=>{r.stock=0;r.boxes=0;});
-   save();
- }
-}
-function finishTrip(){
- alert('Viaje registrado correctamente para '+line.value);
-}
-function exportSummary(){
- let c=current();
- let txt=`Linea: ${line.value}\nObjetivo: ${c.goal}\nFabricadas: ${c.done}\nPendientes: ${c.goal-c.done}\n`;
- alert(txt);
-}
 </script>
 </body></html>
