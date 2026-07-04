@@ -1,87 +1,106 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ficosa Flow v2</title>
+<title>Ficosa Flow v3</title>
 <style>
 body{font-family:Arial;background:#eef2f5;padding:15px}
-.card{background:white;border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-input,select,button{padding:10px;border-radius:10px;border:1px solid #ccc;margin:4px}
+.card{background:white;border-radius:15px;padding:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+button,select,input{padding:8px;border-radius:8px;margin:4px}
 button{background:#0b57d0;color:white;border:none}
-.row{display:flex;justify-content:space-between;align-items:center;margin:8px 0}
-.small{font-size:12px;color:#666}
-.badge{background:#0b57d0;color:white;padding:6px 10px;border-radius:10px;display:inline-block}
+.material{border-bottom:1px solid #ddd;padding:10px 0}
+.small{color:#666;font-size:12px}
 </style>
 </head>
 <body>
-<div class='card'>
-<h2>Ficosa Flow v2</h2>
-<div>Línea:
-<select id='line' onchange='changeLine()'>
-<option>SE270</option><option>SE380 Manual</option><option>SE380X</option>
-</select></div>
-<div>Objetivo <input id='goal' type='number'></div>
-<div>Fabricadas <input id='done' type='number'></div>
-<button onclick='update()'>Actualizar</button>
-<h3 id='pending'></h3>
-<div class='badge' id='boxCounter'></div>
+<div class="card">
+<h2>Ficosa Flow v3</h2>
+Línea:
+<select id="line" onchange="loadLine()">
+<option>SE270</option>
+<option>SE380 Robot</option>
+<option>SE380 Manual</option>
+</select><br>
+Objetivo <input id="goal" type="number"><br>
+Fabricadas <input id="done" type="number">
+<button onclick="saveData()">Actualizar</button>
+<h3 id="pending"></h3>
+<h3 id="totalBoxes"></h3>
+<button onclick="finishTrip()">Viaje completado</button>
+<button onclick="resetShift()">Reiniciar turno</button>
 </div>
-<div class='card'>
-<button onclick='finishTrip()'>Viaje completado</button>
-<button onclick='resetShift()'>Reiniciar turno</button>
-<button onclick='exportSummary()'>Resumen del turno</button>
-</div>
-<div class='card'>
-<h3>Material</h3>
-<div id='refs'></div>
-</div>
-<script>
-const templates={
-"SE270":[
-{name:"Motor Reg Luna IZQ",code:"21992792",box:90,stock:0,boxes:0},
-{name:"Motor Reg Luna DER",code:"21982721S",box:90,stock:0,boxes:0},
-{name:"Carcasa IZQ",code:"SP0006692",box:24,stock:0,boxes:0}],
-"SE380 Manual":[
-{name:"Material SE380 A",code:"SE380A",box:50,stock:0,boxes:0},
-{name:"Material SE380 B",code:"SE380B",box:40,stock:0,boxes:0}],
-"SE380X":[
-{name:"Material X1",code:"X1",box:60,stock:0,boxes:0},
-{name:"Material X2",code:"X2",box:30,stock:0,boxes:0}]
-};
-let data=JSON.parse(localStorage.getItem('ficosaflow')||'{}');
-function current(){let l=line.value;if(!data[l]) data[l]={goal:300,done:0,refs:JSON.parse(JSON.stringify(templates[l]))}; return data[l];}
-function render(){
-let c=current();
-goal.value=c.goal; done.value=c.done;
-let total=0,h="";
-c.refs.forEach((r,i)=>{total+=r.boxes;
-h+=`<div class='row'><div><b>${r.name}</b><div class='small'>${r.code} · ${r.box} uds/caja</div><div>${r.stock} uds en línea · ${r.boxes} cajas</div></div>
-<div><button onclick='addBox(${i})'>+1 caja</button><button onclick='removeBox(${i})'>-1 caja</button></div></div>`});
-refs.innerHTML=h; boxCounter.innerText="Cajas añadidas hoy: "+total; update(false);
-}
-function addBox(i){let c=current(); c.refs[i].stock+=c.refs[i].box;c.refs[i].boxes++;save();}
-function removeBox(i){let c=current(); c.refs[i].stock=Math.max(0,c.refs[i].stock-c.refs[i].box);c.refs[i].boxes=Math.max(0,c.refs[i].boxes-1);save();}
-function update(store=true){let c=current(); c.goal=+goal.value;c.done=+done.value; pending.innerText="Pendientes: "+(c.goal-c.done)+" piezas"; if(store) save();}
-function save(){localStorage.setItem('ficosaflow',JSON.stringify(data));render();}
-function changeLine(){render();}
-render();
 
-function resetShift(){
- if(confirm('¿Reiniciar el turno actual de esta línea?')){
-   let c=current();
-   c.done=0;
-   c.refs.forEach(r=>{r.stock=0;r.boxes=0;});
-   save();
- }
+<div class="card">
+<h3>Materiales</h3>
+<div id="materials"></div>
+</div>
+
+<script>
+const defaults={
+"SE270":[
+{name:"Motor Reg Luna IZQ MCI27",ref:"21992792",box:90,boxes:0},
+{name:"Motor Reg Luna DER MCI2",ref:"21982721S",box:90,boxes:0},
+{name:"Placa Portaluz",ref:"212834388",box:108,boxes:0},
+{name:"Carcasa DER",ref:"212837802",box:28,boxes:0}
+],
+"SE380 Robot":[
+{name:"Blink IZQ High",ref:"21992889D",box:91,boxes:0},
+{name:"Motor Abatible IZQ",ref:"21982465",box:63,boxes:0},
+{name:"Motor Abatible DER",ref:"21993264",box:90,boxes:0},
+{name:"Carcasa IZQ",ref:"SP0006692",box:24,boxes:0},
+{name:"Carcasa DER",ref:"SP0006693",box:24,boxes:0}
+],
+"SE380 Manual":[
+{name:"Cable MEM SWA",ref:"SA0005918D",box:60,boxes:0},
+{name:"Motor Abatible DER",ref:"21982466",box:63,boxes:0},
+{name:"Carcasa IZQ",ref:"SP0006692",box:24,boxes:0},
+{name:"Carcasa DER",ref:"SP0006693",box:24,boxes:0}
+]
+};
+
+let data=JSON.parse(localStorage.getItem("ficosaflowv3")||"{}");
+
+function getLine(){
+ let l=line.value;
+ if(!data[l]) data[l]={goal:300,done:0,materials:JSON.parse(JSON.stringify(defaults[l]))};
+ return data[l];
 }
-function finishTrip(){
- alert('Viaje registrado correctamente para '+line.value);
+
+function loadLine(){
+ let d=getLine();
+ goal.value=d.goal;
+ done.value=d.done;
+ renderMaterials();
+ saveData();
 }
-function exportSummary(){
- let c=current();
- let txt=`Linea: ${line.value}\nObjetivo: ${c.goal}\nFabricadas: ${c.done}\nPendientes: ${c.goal-c.done}\n`;
- alert(txt);
+
+function renderMaterials(){
+ let d=getLine();
+ let total=0,html="";
+ d.materials.forEach((m,i)=>{
+ total+=m.boxes;
+ let units=m.boxes*m.box;
+ html+=`<div class='material'><b>${m.name}</b><br>
+ <span class='small'>Ref: ${m.ref}</span><br>
+ 📦 Cajas introducidas: ${m.boxes}<br>
+ 📦 Unidades disponibles: ${units}<br>
+ 📦 ${m.box} uds/caja<br>
+ <button onclick='addBox(${i})'>+1 caja</button>
+ <button onclick='removeBox(${i})'>-1 caja</button>
+ </div>`;
+ });
+ materials.innerHTML=html;
+ totalBoxes.innerText="Total cajas introducidas: "+total;
 }
+
+function addBox(i){getLine().materials[i].boxes++;save();}
+function removeBox(i){getLine().materials[i].boxes=Math.max(0,getLine().materials[i].boxes-1);save();}
+function saveData(){let d=getLine();d.goal=+goal.value;d.done=+done.value;pending.innerText="Pendientes: "+(d.goal-d.done)+" piezas";save();}
+function save(){localStorage.setItem("ficosaflowv3",JSON.stringify(data));loadLine();}
+function finishTrip(){alert("Viaje registrado para "+line.value);}
+function resetShift(){if(confirm("¿Reiniciar esta línea?")){data[line.value]=undefined;loadLine();save();}}
+loadLine();
 </script>
-</body></html>
+</body>
+</html>
