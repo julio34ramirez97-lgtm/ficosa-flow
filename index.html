@@ -19,7 +19,7 @@ button{background:#0b57d0;color:white;border:none}
 <h2>Ficosa Flow v2</h2>
 <div>Línea:
 <select id='line' onchange='changeLine()'>
-<option>SE270</option><option>SE380 Manual</option><option>SE380X</option>
+<option>SE270</option><option>SE380 Robot</option><option>SE380 Manual</option><option>IVECO 5/6</option><option>STO CHASIS T-ROC1</option><option>SUBCJTO NISSAN PZ1D</option>
 </select></div>
 <div>Objetivo <input id='goal' type='number'></div>
 <div>Fabricadas <input id='done' type='number'></div>
@@ -27,6 +27,13 @@ button{background:#0b57d0;color:white;border:none}
 <h3 id='pending'></h3>
 <div class='badge' id='boxCounter'></div>
 </div>
+
+<div class='card'>
+<h3>⚙️ Extras</h3>
+<button onclick='saveTurn()'>💾 Guardar turno</button>
+<button onclick='viewTurns()'>📚 Ver historial</button>
+</div>
+
 <div class='card'>
 <h3>Material</h3>
 <div id='refs'></div>
@@ -61,5 +68,25 @@ function update(store=true){let c=current(); c.goal=+goal.value;c.done=+done.val
 function save(){localStorage.setItem('ficosaflow',JSON.stringify(data));render();}
 function changeLine(){render();}
 render();
+
+function saveTurn(){
+ let turns=JSON.parse(localStorage.getItem('ficosaflow_turns')||'[]');
+ turns.push({
+   fecha:new Date().toLocaleString(),
+   linea:line.value,
+   objetivo:goal.value,
+   fabricadas:done.value,
+   datos:JSON.parse(JSON.stringify(current()))
+ });
+ localStorage.setItem('ficosaflow_turns',JSON.stringify(turns));
+ alert('✅ Turno guardado');
+}
+function viewTurns(){
+ let turns=JSON.parse(localStorage.getItem('ficosaflow_turns')||'[]');
+ if(turns.length===0){alert('No hay turnos guardados');return;}
+ let txt=turns.map(t=>`${t.fecha}\n🏭 ${t.linea}\n🎯 ${t.objetivo}\n✅ ${t.fabricadas}`).join('\n\n');
+ alert(txt);
+}
+
 </script>
 </body></html>
