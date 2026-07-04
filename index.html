@@ -1,70 +1,74 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Ficosa Flow v5</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficosa Flow v3</title>
 <style>
-body{font-family:Arial;background:#f4f4f4;padding:20px}
-.card{background:white;border-radius:15px;padding:20px;max-width:900px;margin:auto}
-select,button,input{padding:8px;margin:5px}
-.linea{border:1px solid #ddd;border-radius:10px;padding:10px;margin-top:10px}
+body{font-family:Arial;background:#eef2f5;padding:15px}
+.card{background:white;border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+button,input,select{padding:10px;border-radius:10px;margin:4px}
+.badge{background:#0b57d0;color:white;padding:6px 10px;border-radius:10px;display:inline-block}
 </style>
 </head>
 <body>
-<div class="card">
-<h1>🚚 Ficosa Flow v5 📦</h1>
-
-<h3>🏭 Líneas activas del turno</h3>
-<select id="linea">
-<option>SE380 AUTO</option>
-<option>SE380 MANUAL</option>
-<option>IVECO 5/6</option>
-<option>STO CHASIS T-ROC1</option>
-<option>SUBCJTO NISSAN PZ1D</option>
-<option>SE270</option>
-</select>
-
-<div class="linea">
-<h3>📦 Cajas introducidas: <span id="cajas">0</span></h3>
-<button onclick="sumar()">➕ Añadir caja</button>
-<button onclick="restar()">➖ Quitar caja</button>
-
-<h3>🎯 Objetivo</h3>
-<input id="objetivo" type="number" value="0">
-
-<h3>✅ Fabricadas</h3>
-<input id="fabricadas" type="number" value="0">
-
-<h3>⏳ Pendientes: <span id="pendientes">0</span></h3>
-<button onclick="calcular()">Actualizar</button>
+<div class='card'>
+<h2>🚚 Ficosa Flow 📦</h2>
+<div>📅 Líneas activas esta semana:</div>
+<div id='week'></div>
+<button onclick='configWeek()'>⚙️ Configurar semana</button><br>
+🏭 Línea:
+<select id='line' onchange='render()'></select><br>
+🎯 Objetivo <input id='goal' type='number'><br>
+✅ Fabricadas <input id='done' type='number'><br>
+<button onclick='updateData()'>Actualizar</button>
+<h3 id='pending'></h3>
+<div class='badge' id='counter'></div><br>
+<button onclick='closeShift()'>🔒 Cerrar turno</button>
+<button onclick='showHistory()'>📚 Historial</button>
 </div>
-
-<button onclick="cerrarTurno()">🔄 Cerrar turno</button>
-
-<h3>📋 Historial</h3>
-<ul id="historial"></ul>
-
+<div class='card'><div id='refs'></div></div>
 <script>
-let cajas=0;
-function sumar(){cajas++;document.getElementById('cajas').innerText=cajas;}
-function restar(){if(cajas>0)cajas--;document.getElementById('cajas').innerText=cajas;}
-function calcular(){
-let o=Number(document.getElementById('objetivo').value);
-let f=Number(document.getElementById('fabricadas').value);
-document.getElementById('pendientes').innerText=o-f;
+const allLines=["SE270","SE380 Robot","SE380 Manual","IVECO 5/6","STO CHASIS T-ROC1","SUBCJTO NISSAN PZ1D"];
+let active=JSON.parse(localStorage.getItem('activeLines')||'["SE270","SE380 Robot","SE380 Manual"]');
+let data=JSON.parse(localStorage.getItem('flowData')||'{}');
+let history=JSON.parse(localStorage.getItem('history')||'[]');
+
+function initLines(){
+line.innerHTML="";
+active.forEach(l=>line.innerHTML+=`<option>${l}</option>`);
+week.innerHTML=active.map(x=>"🏭 "+x).join("<br>");
+render();
 }
-function cerrarTurno(){
-const linea=document.getElementById('linea').value;
-const li=document.createElement('li');
-li.innerText=new Date().toLocaleString()+" - "+linea+" - 📦 "+cajas+" cajas";
-document.getElementById('historial').appendChild(li);
-localStorage.setItem('historial',document.getElementById('historial').innerHTML);
-cajas=0;document.getElementById('cajas').innerText=0;
+function current(){
+let l=line.value;
+if(!data[l]) data[l]={goal:0,done:0,boxes:0};
+return data[l];
 }
-window.onload=function(){
-document.getElementById('historial').innerHTML=localStorage.getItem('historial')||"";
+function render(){
+let c=current();
+goal.value=c.goal;done.value=c.done;
+pending.innerText="⏳ Pendientes: "+(c.goal-c.done);
+counter.innerText="📦 Cajas introducidas: "+c.boxes;
+refs.innerHTML="<button onclick='addBox()'>📦 +1 caja</button> <button onclick='removeBox()'>➖ -1 caja</button>";
+save();
 }
+function addBox(){current().boxes++;render();}
+function removeBox(){current().boxes=Math.max(0,current().boxes-1);render();}
+function updateData(){let c=current();c.goal=+goal.value;c.done=+done.value;render();}
+function configWeek(){
+let txt=prompt("Escribe las líneas separadas por coma\n"+allLines.join(", "),active.join(", "));
+if(txt){active=txt.split(",").map(x=>x.trim());localStorage.setItem('activeLines',JSON.stringify(active));initLines();}
+}
+function closeShift(){
+history.push({date:new Date().toLocaleString(),line:line.value,boxes:current().boxes});
+localStorage.setItem('history',JSON.stringify(history));
+alert("Turno guardado en historial 📚");
+}
+function showHistory(){
+alert(history.map(h=>h.date+" | "+h.line+" | 📦 "+h.boxes).join("\n")||"Sin historial");
+}
+function save(){localStorage.setItem('flowData',JSON.stringify(data));}
+initLines();
 </script>
-</div>
-</body>
-</html>
+</body></html>
